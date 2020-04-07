@@ -3,6 +3,8 @@ package com.github.jonathanlalou.album2book
 import groovy.util.logging.Log4j
 import lombok.Getter
 import lombok.Setter
+import org.apache.commons.io.FilenameUtils
+import org.apache.commons.lang3.StringUtils
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
@@ -48,14 +50,30 @@ class Album2Epub implements ApplicationRunner {
         copyResource("epub/container.xml", "/META-INF/container.xml")
         copyResource("epub/styles.css", "/OEBPS/Styles/styles.css")
 
-        log.warn("Hello world")
+        // Load template for XHTML files embedding images
+        String imageTemplateXhtml = this.getClass().getResource('/epub/image-template.xhtml').getText('UTF-8')
+
         for (int i = 0; i < folders.size(); i++) {
             log.info("Chapter: $i *** ${folders[i]} *** ${titles[i]}")
             File folder = new File(sourceFolder + folders[i])
             if (folder.exists()) {
+                // Create folder for images
+                Files.createDirectories(Path.of("${work}/OEBPS/Images/${folders[i]}/"))
+                // Create folder for XHTML files
+                Files.createDirectories(Path.of("${work}/OEBPS/Text/${folders[i]}/"))
                 final List<File> files = Arrays.asList(folder.listFiles())
                 for (File file : files) {
                     log.info(file)
+                    // Copy image
+                    Files.copy(file.toPath(), Path.of("${work}/OEBPS/Images/${folders[i]}/${file.getName()}"))
+                    new File("${work}/OEBPS/Text/${folders[i]}/${FilenameUtils.removeExtension(file.getName())}.xhtml")
+                            .write(
+                                    StringUtils.replace(
+                                            imageTemplateXhtml,
+                                            '${image}',
+                                            "${folders[i]}/${file.getName()}"
+                                    )
+                            )
                 }
             }
         }
