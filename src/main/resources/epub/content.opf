@@ -6,9 +6,9 @@
         <dc:contributor opf:role="trl">${dcContributorTrl}</dc:contributor>
         <dc:language>${dcLanguage}</dc:language>
         <dc:creator  opf:file-as="${dcCreatorAut}" opf:role="aut">${dcCreatorAut}</dc:creator>
-        <dc:date opf:event="creation">${creationDate}</dc:date>
+        <dc:date opf:event="creation">${dcDateCreation}</dc:date>
+        <dc:date xmlns:opf="http://www.idpf.org/2007/opf" opf:event="modification">${dcDateModification}</dc:date>
         <meta name="cover" content="cover.jpg" />
-        <dc:date xmlns:opf="http://www.idpf.org/2007/opf" opf:event="modification">${modificationDate}</dc:date>
     </metadata>
     <manifest>
         <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>

@@ -30,6 +30,10 @@ class Album2Epub implements ApplicationRunner {
     String dcTitle
     @Value('${dc.creator.aut}')
     String dcCreatorAut
+    @Value('${dc.date.creation}')
+    String dcDateCreation
+    @Value('${dc.date.modification}')
+    String dcDateModification
     @Value('${dc.contributor.trl}')
     String dcContributorTrl
     @Value('${work.folder}')
@@ -104,8 +108,7 @@ class Album2Epub implements ApplicationRunner {
                     itemrefs << "        <itemref idref=\"${xhtmlFileName}\"/>\n"
                     // TODO feed toc.ncx
                 }
-                navPoints << """
-        <navPoint id="navPoint-1" playOrder="$i">
+                navPoints << """        <navPoint id="navPoint-1" playOrder="$i">
             <navLabel>
                 <text>${titles[i]}</text>
             </navLabel>
@@ -117,8 +120,30 @@ class Album2Epub implements ApplicationRunner {
 
         contentOpf = StringUtils.replaceEach(
                 contentOpf,
-                ['${dcTitle}', '${dcIdentifierScheme}', '${dcIdentifierUrn}', '${dcCreatorAut}', '${dcLanguage}', '${dcContributorTrl}', '${items}', '${itemrefs}'] as String[],
-                [dcTitle, dcIdentifierScheme, dcIdentifierUrn, dcCreatorAut, dcLanguage, dcContributorTrl, items.toString(), itemrefs.toString()] as String[]
+                [
+                        '${dcTitle}'
+                        , '${dcIdentifierScheme}'
+                        , '${dcIdentifierUrn}'
+                        , '${dcCreatorAut}'
+                        , '${dcDateCreation}'
+                        , '${dcDateModification}'
+                        , '${dcLanguage}'
+                        , '${dcContributorTrl}'
+                        , '${items}'
+                        , '${itemrefs}'
+                ] as String[],
+                [
+                        dcTitle
+                        , dcIdentifierScheme
+                        , dcIdentifierUrn
+                        , dcCreatorAut
+                        , dcDateCreation
+                        , dcDateModification
+                        , dcLanguage
+                        , dcContributorTrl
+                        , items.toString()
+                        , itemrefs.toString()
+                ] as String[]
         )
         new File("${work}/OEBPS/content.opf").write(contentOpf)
 
