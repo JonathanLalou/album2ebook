@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
 import org.springframework.stereotype.Component
+import org.zeroturnaround.zip.ZipUtil
 
 import javax.annotation.PostConstruct
 import java.nio.file.Files
@@ -37,7 +38,7 @@ class Album2Epub implements ApplicationRunner {
     @Value('${dc.contributor.trl}')
     String dcContributorTrl
     @Value('${work.folder}')
-    String workFolder
+    String szWorkFolder
     @Value('${source.folder}')
     String sourceFolder
     @Value('${ebook.target.type}')
@@ -58,11 +59,11 @@ class Album2Epub implements ApplicationRunner {
 
     @Override
     void run(ApplicationArguments args) throws Exception {
-        final File work = new File(workFolder)
-        if (work.exists()) {
-            work.deleteDir()
+        final File workFolder = new File(szWorkFolder)
+        if (workFolder.exists()) {
+            workFolder.deleteDir()
         }
-        work.mkdirs()
+        workFolder.mkdirs()
         copyResource("epub/mimetype", "mimetype")
         copyResource("epub/container.xml", "/META-INF/container.xml")
         copyResource("epub/styles.css", "/OEBPS/Styles/styles.css")
@@ -83,18 +84,18 @@ class Album2Epub implements ApplicationRunner {
             File folder = new File(sourceFolder + folders[i])
             if (folder.exists()) {
                 // Create folder for images
-                Files.createDirectories(Path.of("${work}/OEBPS/Images/${folders[i]}/"))
+                Files.createDirectories(Path.of("${workFolder}/OEBPS/Images/${folders[i]}/"))
                 // Create folder for XHTML files
-                Files.createDirectories(Path.of("${work}/OEBPS/Text/${folders[i]}/"))
+                Files.createDirectories(Path.of("${workFolder}/OEBPS/Text/${folders[i]}/"))
                 final List<File> files = Arrays.asList(folder.listFiles())
                 for (File file : files) {
                     log.info(file)
                     // Copy image
                     def targetImageRelativePath = "Images/${folders[i]}/${file.name}"
-                    Files.copy(file.toPath(), Path.of("${work}/OEBPS/" + targetImageRelativePath))
+                    Files.copy(file.toPath(), Path.of("${workFolder}/OEBPS/" + targetImageRelativePath))
                     def xhtmlFileName = "${FilenameUtils.removeExtension(file.name)}.xhtml"
                     def targetXhtmlRelativePath = "Text/${folders[i]}/${xhtmlFileName}"
-                    new File("${work}/OEBPS/" + targetXhtmlRelativePath)
+                    new File("${workFolder}/OEBPS/" + targetXhtmlRelativePath)
                             .write(
                                     StringUtils.replace(
                                             imageTemplateXhtml,
@@ -108,7 +109,7 @@ class Album2Epub implements ApplicationRunner {
                     itemrefs << "        <itemref idref=\"${xhtmlFileName}\"/>\n"
                     // TODO feed toc.ncx
                 }
-                navPoints << """        <navPoint id="navPoint-1" playOrder="$i">
+                navPoints << """        <navPoint id="navPoint-${i}" playOrder="$i">
             <navLabel>
                 <text>${titles[i]}</text>
             </navLabel>
@@ -118,6 +119,33 @@ class Album2Epub implements ApplicationRunner {
             }
         }
 
+        generateOpfContent(contentOpf, items, itemrefs, workFolder)
+
+        generateTocNcx(tocNcx, navPoints, workFolder)
+
+        ZipUtil.pack(workFolder, new File(dcTitle.replace(" ", "_") + ".epub"))
+    }
+
+    def void generateTocNcx(String tocNcx, StringBuffer navPoints, File work) {
+        tocNcx = StringUtils.replaceEach(
+                tocNcx,
+                [
+                        '${dcTitle}'
+                        , '${dcIdentifierScheme}'
+                        , '${dcIdentifierUrn}'
+                        , '${navPoints}'
+                ] as String[],
+                [
+                        dcTitle
+                        , dcIdentifierScheme
+                        , dcIdentifierUrn
+                        , navPoints.toString()
+                ] as String[]
+        )
+        new File("${work}/OEBPS/toc.ncx").write(tocNcx)
+    }
+
+    def void generateOpfContent(String contentOpf, StringBuffer items, StringBuffer itemrefs, File work) {
         contentOpf = StringUtils.replaceEach(
                 contentOpf,
                 [
@@ -146,14 +174,6 @@ class Album2Epub implements ApplicationRunner {
                 ] as String[]
         )
         new File("${work}/OEBPS/content.opf").write(contentOpf)
-
-        tocNcx = StringUtils.replaceEach(
-                tocNcx,
-                ['${dcTitle}', '${dcIdentifierScheme}', '${dcIdentifierUrn}', '${navPoints}'] as String[],
-                [dcTitle, dcIdentifierScheme, dcIdentifierUrn, navPoints.toString()] as String[]
-        )
-        new File("${work}/OEBPS/toc.ncx").write(tocNcx)
-
     }
 
     String retrieveMediaType(File file) {
@@ -168,7 +188,7 @@ class Album2Epub implements ApplicationRunner {
     }
 
     def Path copyResource(String sourceFile, String targetFile) {
-        Path targetPath = Path.of("${workFolder}/" + targetFile)
+        Path targetPath = Path.of("${szWorkFolder}/" + targetFile)
         Files.createDirectories(targetPath.getParent());
         Files.copy(Path.of("./src/main/resources/" + sourceFile), targetPath)
     }
