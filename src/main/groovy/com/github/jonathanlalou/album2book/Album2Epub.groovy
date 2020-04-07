@@ -22,8 +22,12 @@ class Album2Epub implements ApplicationRunner {
 
     @Value('${dc.identifier.scheme}')
     DcIdentifierScheme dcIdentifierScheme
+    @Value('${dc.identifier.urn}')
+    String dcIdentifierUrn
     @Value('${dc.language}')
     String dcLanguage
+    @Value('${dc.title}')
+    String dcTitle
     @Value('${dc.creator.aut}')
     String dcCreatorAut
     @Value('${dc.contributor.trl}')
@@ -61,11 +65,14 @@ class Album2Epub implements ApplicationRunner {
 
         // Load template for XHTML files embedding images
         String imageTemplateXhtml = this.getClass().getResource('/epub/image-template.xhtml').getText('UTF-8')
-        // Load template for XHTML files embedding images
+        // Load template for content.opf
         String contentOpf = this.getClass().getResource('/epub/content.opf').getText('UTF-8')
+        // Load template for toc.ncx
+        String tocNcx = this.getClass().getResource('/epub/toc.ncx').getText('UTF-8')
 
         StringBuffer items = new StringBuffer()
         StringBuffer itemrefs = new StringBuffer()
+        StringBuffer navPoints = new StringBuffer()
 
         for (int i = 0; i < folders.size(); i++) {
             log.info("Chapter: $i *** ${folders[i]} *** ${titles[i]}")
@@ -97,15 +104,30 @@ class Album2Epub implements ApplicationRunner {
                     itemrefs << "        <itemref idref=\"${xhtmlFileName}\"/>\n"
                     // TODO feed toc.ncx
                 }
+                navPoints << """
+        <navPoint id="navPoint-1" playOrder="$i">
+            <navLabel>
+                <text>${titles[i]}</text>
+            </navLabel>
+            <content src="Text/${folders[i]}/${FilenameUtils.removeExtension(files[0].name)}.xhtml"/>
+        </navPoint>
+"""
             }
         }
-        def targetImageRelativePath = "OEBPS/content.opf"
+
         contentOpf = StringUtils.replaceEach(
                 contentOpf,
-                ['${dcCreatorAut}', '${dcLanguage}', '${dcContributorTrl}', '${items}', '${itemrefs}'] as String[],
-                [dcCreatorAut, dcLanguage, dcContributorTrl, items.toString(), itemrefs.toString()] as String[]
+                ['${dcTitle}', '${dcIdentifierScheme}', '${dcIdentifierUrn}', '${dcCreatorAut}', '${dcLanguage}', '${dcContributorTrl}', '${items}', '${itemrefs}'] as String[],
+                [dcTitle, dcIdentifierScheme, dcIdentifierUrn, dcCreatorAut, dcLanguage, dcContributorTrl, items.toString(), itemrefs.toString()] as String[]
         )
         new File("${work}/OEBPS/content.opf").write(contentOpf)
+
+        tocNcx = StringUtils.replaceEach(
+                tocNcx,
+                ['${dcTitle}', '${dcIdentifierScheme}', '${dcIdentifierUrn}', '${navPoints}'] as String[],
+                [dcTitle, dcIdentifierScheme, dcIdentifierUrn, navPoints.toString()] as String[]
+        )
+        new File("${work}/OEBPS/toc.ncx").write(tocNcx)
 
     }
 
