@@ -20,6 +20,14 @@ import java.nio.file.Path
 @Log4j
 class Album2Epub implements ApplicationRunner {
 
+    @Value('${dc.identifier.scheme}')
+    DcIdentifierScheme dcIdentifierScheme
+    @Value('${dc.language}')
+    String dcLanguage
+    @Value('${dc.creator.aut}')
+    String dcCreatorAut
+    @Value('${dc.contributor.trl}')
+    String dcContributorTrl
     @Value('${work.folder}')
     String workFolder
     @Value('${source.folder}')
@@ -33,6 +41,7 @@ class Album2Epub implements ApplicationRunner {
 
     @PostConstruct
     void postConstruct() {
+        log.info("dcIdentifierScheme: ${dcIdentifierScheme}")
         log.info("sourceFolder: $sourceFolder")
         log.info("targetType: $targetType")
         log.info("folders: ${folders}")
@@ -52,6 +61,11 @@ class Album2Epub implements ApplicationRunner {
 
         // Load template for XHTML files embedding images
         String imageTemplateXhtml = this.getClass().getResource('/epub/image-template.xhtml').getText('UTF-8')
+        // Load template for XHTML files embedding images
+        String contentOpf = this.getClass().getResource('/epub/content.opf').getText('UTF-8')
+
+        StringBuffer items = new StringBuffer()
+        StringBuffer itemrefs = new StringBuffer()
 
         for (int i = 0; i < folders.size(); i++) {
             log.info("Chapter: $i *** ${folders[i]} *** ${titles[i]}")
@@ -65,18 +79,45 @@ class Album2Epub implements ApplicationRunner {
                 for (File file : files) {
                     log.info(file)
                     // Copy image
-                    Files.copy(file.toPath(), Path.of("${work}/OEBPS/Images/${folders[i]}/${file.getName()}"))
-                    new File("${work}/OEBPS/Text/${folders[i]}/${FilenameUtils.removeExtension(file.getName())}.xhtml")
+                    def targetImageRelativePath = "Images/${folders[i]}/${file.name}"
+                    Files.copy(file.toPath(), Path.of("${work}/OEBPS/" + targetImageRelativePath))
+                    def xhtmlFileName = "${FilenameUtils.removeExtension(file.name)}.xhtml"
+                    def targetXhtmlRelativePath = "Text/${folders[i]}/${xhtmlFileName}"
+                    new File("${work}/OEBPS/" + targetXhtmlRelativePath)
                             .write(
                                     StringUtils.replace(
                                             imageTemplateXhtml,
                                             '${image}',
-                                            "${folders[i]}/${file.getName()}"
+                                            "${folders[i]}/${file.name}"
                                     )
                             )
+                    String mediaType = retrieveMediaType(file)
+                    items << "        <item id=\"${file.name}\" href=\"${targetImageRelativePath}\" media-type=\"${mediaType}\"/>\n"
+                    items << "        <item id=\"${xhtmlFileName}\" href=\"${targetXhtmlRelativePath}\" media-type=\"application/xhtml+xml\"/>\n"
+                    itemrefs << "        <itemref idref=\"${xhtmlFileName}\"/>\n"
+                    // TODO feed toc.ncx
                 }
             }
         }
+        def targetImageRelativePath = "OEBPS/content.opf"
+        contentOpf = StringUtils.replaceEach(
+                contentOpf,
+                ['${dcCreatorAut}', '${dcLanguage}', '${dcContributorTrl}', '${items}', '${itemrefs}'] as String[],
+                [dcCreatorAut, dcLanguage, dcContributorTrl, items.toString(), itemrefs.toString()] as String[]
+        )
+        new File("${work}/OEBPS/content.opf").write(contentOpf)
+
+    }
+
+    String retrieveMediaType(File file) {
+        switch (FilenameUtils.getExtension(file.name)) {
+            case "jpg":
+            case "jpeg":
+                return "image/jpeg"
+            case "png":
+                return "image/png"
+        }
+        ""
     }
 
     def Path copyResource(String sourceFile, String targetFile) {

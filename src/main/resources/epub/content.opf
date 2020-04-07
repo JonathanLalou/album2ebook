@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package version="2.0" unique-identifier="BookId" xmlns="http://www.idpf.org/2007/opf">
+    <metadata xmlns:opf="http://www.idpf.org/2007/opf" xmlns:dc="http://purl.org/dc/elements/1.1/">
+        <dc:title>${title}</dc:title>
+        <dc:identifier opf:scheme="${dcIdentifierScheme}" id="BookId">urn:${dcIdentifierScheme}:1234567890123</dc:identifier>
+<!--        <dc:identifier opf:scheme="isbn" id="BookId">urn:isbn:1234567890123</dc:identifier>-->
+        <!--    <dc:identifier opf:scheme="UUID" id="BookId">urn:uuid:11111111-2222-3333-4444-555555555555</dc:identifier>-->
+        <dc:contributor opf:role="trl">${dcContributorTrl}</dc:contributor>
+        <dc:language>${dcLanguage}</dc:language>
+        <dc:creator  opf:file-as="${dcCreatorAut}" opf:role="aut">${dcCreatorAut}</dc:creator>
+        <dc:date opf:event="creation">${creationDate}</dc:date>
+        <meta name="cover" content="cover.jpg" />
+        <dc:date xmlns:opf="http://www.idpf.org/2007/opf" opf:event="modification">${modificationDate}</dc:date>
+    </metadata>
+    <manifest>
+        <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
+        <item id="styles.css" href="Styles/styles.css" media-type="text/css"/>
+        <item id="TOC.xhtml" href="Text/TOC.xhtml" media-type="application/xhtml+xml"/>
+<!--Image and XHTML items-->
+${items}
+    </manifest>
+    <spine toc="ncx">
+<!--HTML itemrefs-->
+${itemrefs}
+    </spine>
+    <guide>
+        <reference type="cover" title="Cover" href="Text/cover.xhtml"/>
+        <reference type="toc" title="Table of Contents" href="Text/TOC.xhtml"/>
+    </guide>
+</package>
