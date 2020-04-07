@@ -5,24 +5,21 @@
         <dc:identifier opf:scheme="${dcIdentifierScheme}" id="BookId">urn:${dcIdentifierScheme}:${dcIdentifierUrn}</dc:identifier>
         <dc:contributor opf:role="trl">${dcContributorTrl}</dc:contributor>
         <dc:language>${dcLanguage}</dc:language>
-        <dc:creator  opf:file-as="${dcCreatorAut}" opf:role="aut">${dcCreatorAut}</dc:creator>
+        <dc:creator opf:file-as="${dcCreatorAut}" opf:role="aut">${dcCreatorAut}</dc:creator>
         <dc:date opf:event="creation">${dcDateCreation}</dc:date>
         <dc:date xmlns:opf="http://www.idpf.org/2007/opf" opf:event="modification">${dcDateModification}</dc:date>
-        <meta name="cover" content="cover.jpg" />
     </metadata>
     <manifest>
         <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
         <item id="styles.css" href="Styles/styles.css" media-type="text/css"/>
-        <item id="TOC.xhtml" href="Text/TOC.xhtml" media-type="application/xhtml+xml"/>
-<!--Image and XHTML items-->
-${items}
+        <!--Image and XHTML items-->
+        ${items}
     </manifest>
     <spine toc="ncx">
-<!--HTML itemrefs-->
-${itemrefs}
+        <!--HTML itemrefs-->
+        ${itemrefs}
     </spine>
     <guide>
-        <reference type="cover" title="Cover" href="Text/cover.xhtml"/>
-        <reference type="toc" title="Table of Contents" href="Text/TOC.xhtml"/>
+        <reference type="cover" title="Cover" href="${guideReferenceHref}"/>
     </guide>
 </package>

@@ -48,6 +48,8 @@ class Album2Epub implements ApplicationRunner {
     @Value("#{'\${chapter.titles}'.split(',')}")
     List<String> titles
 
+    String guideReferenceHref
+
     @PostConstruct
     void postConstruct() {
         log.info("dcIdentifierScheme: ${dcIdentifierScheme}")
@@ -116,6 +118,9 @@ class Album2Epub implements ApplicationRunner {
             <content src="Text/${folders[i]}/${FilenameUtils.removeExtension(files[0].name)}.xhtml"/>
         </navPoint>
 """
+                if(i==0){
+                    guideReferenceHref = "Text/${folders[i]}/${FilenameUtils.removeExtension(files[0].name)}.xhtml"
+                }
             }
         }
 
@@ -159,6 +164,7 @@ class Album2Epub implements ApplicationRunner {
                         , '${dcContributorTrl}'
                         , '${items}'
                         , '${itemrefs}'
+                        , '${guideReferenceHref}'
                 ] as String[],
                 [
                         dcTitle
@@ -171,6 +177,7 @@ class Album2Epub implements ApplicationRunner {
                         , dcContributorTrl
                         , items.toString()
                         , itemrefs.toString()
+                        , guideReferenceHref
                 ] as String[]
         )
         new File("${work}/OEBPS/content.opf").write(contentOpf)
